@@ -1,6 +1,14 @@
 import 'reflect-metadata';
 import { SentryTracedParams, SentryTracedParamsIndexes } from './types';
-import { generateSpanContext, getSentryInstance, isPromise } from './utils';
+import {
+  generateSpanContext,
+  getSentryInstance,
+  isGenerator,
+  isPromise,
+  wrapAsyncIterable,
+  wrapIterable,
+  wrapPromise,
+} from './utils';
 
 const sentryParamsMetadataKey = Symbol('sentryParams');
 
@@ -23,7 +31,8 @@ export const SentryTraced = (options?: SentryTracedParams) => {
       const sentryParams: SentryTracedParamsIndexes =
         Reflect.getOwnMetadata(sentryParamsMetadataKey, target, methodName) ||
         [];
-      const intermediaryFunction = async () => {
+
+      const intermediaryFunction = () => {
         if (!sentryClient || !sentryClient.getCurrentHub()) {
           throw new Error(`Sentry client not set`);
         }
@@ -33,46 +42,56 @@ export const SentryTraced = (options?: SentryTracedParams) => {
         );
         const scope = sentryClient.getCurrentHub().getScope();
 
-        // get the current context, the order matters, we want to get
-        // - the current span if it exists, this allows nesting if the function call is a child of a child or a leaf
-        // - the current transaction if it exists, this can only happen if the function call is a child of the root node
-        const contextTransaction = scope?.getSpan() || scope?.getTransaction();
-        // we try to get the context span or transaction and if it doesn't exist we create a new transaction
+        const inheritedSpan = scope.getSpan() || scope.getTransaction();
         const parentSpan =
-          contextTransaction ||
+          inheritedSpan ??
           sentryClient.startTransaction({
             ...spanContext,
             name: spanContext.descriptionNoArguments,
           });
 
-        const childSpan = parentSpan?.startChild(spanContext);
+        const childSpan = parentSpan.startChild(spanContext);
         sentryClient.configureScope((scope) => {
           scope.setSpan(childSpan);
         });
 
-        const result = original.call(this, ...args);
-
-        function finishSpan() {
+        function finish(status: string) {
           sentryClient.configureScope((scope) => {
             scope.setSpan(parentSpan);
           });
-          childSpan?.finish();
-          if (!contextTransaction) {
+
+          childSpan.setStatus(status);
+          childSpan.finish();
+
+          if (!inheritedSpan) {
+            parentSpan.setStatus(status);
             parentSpan.finish();
           }
         }
 
-        if (isPromise(result)) {
-          return result.then((e: any) => {
-            finishSpan();
-            return e;
-          });
+        try {
+          const result = original.call(this, ...args);
+
+          if (isGenerator(result)) {
+            return wrapIterable(result, finish);
+          }
+
+          if (result?.[Symbol.asyncIterator]) {
+            return wrapAsyncIterable(result, finish);
+          }
+
+          if (isPromise(result)) {
+            return wrapPromise(result, finish);
+          }
+
+          finish('ok');
+          return result;
+        } catch (error) {
+          finish('error');
+          throw error;
         }
-
-        finishSpan();
-
-        return result;
       };
+
       return intermediaryFunction();
     };
   };

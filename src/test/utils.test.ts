@@ -1,6 +1,17 @@
-import { generateSpanContext } from '../utils';
+import { generateSpanContext, isGenerator } from '../utils';
 
 describe('utils', () => {
+  describe('isGenerator', () => {
+    const generator = (function* () {
+      yield 1;
+      yield 2;
+      yield 3;
+    })();
+    const nonGenerator = [1, 2, 3];
+    expect(isGenerator(generator)).toEqual(true);
+    expect(isGenerator(nonGenerator)).toEqual(false);
+  });
+
   describe('generateSpanContext', () => {
     it('correctly generates context for just method name', () => {
       expect(

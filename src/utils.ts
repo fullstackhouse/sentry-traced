@@ -29,6 +29,61 @@ export const isPromise = (value: any): boolean => {
   );
 };
 
+export function isGenerator(value: any): boolean {
+  return /\[object Generator|GeneratorFunction\]/.test(
+    Object.prototype.toString.call(value),
+  );
+}
+
+export function* wrapIterable<T>(
+  iterable: Iterable<T>,
+  onDone: (status: string) => void,
+): Iterable<T> {
+  try {
+    yield* iterable;
+    onDone('ok');
+  } catch (error) {
+    onDone('error');
+    throw error;
+  }
+}
+
+export async function* wrapAsyncIterable<T>(
+  iterable: AsyncIterable<T>,
+  onDone: (status: string) => void,
+): AsyncIterable<T> {
+  try {
+    yield* iterable;
+    onDone('ok');
+  } catch (error) {
+    onDone('error');
+    throw error;
+  }
+}
+
+export async function wrapPromise<T>(
+  promise: Promise<T>,
+  onDone: (status: string) => void,
+): Promise<T> {
+  return promise
+    .then((value: any) => {
+      onDone('ok');
+      return value;
+    })
+    .catch((error: any) => {
+      onDone('error');
+      throw error;
+    });
+}
+
+export async function fromAsync<T>(iterable: AsyncIterable<T>): Promise<T[]> {
+  const items: T[] = [];
+  for await (const item of iterable) {
+    items.push(item);
+  }
+  return items;
+}
+
 /**
  * The data the Sentry needs to generate a span context
  * @param metadata Internal metadata used to generate the span context. It contains the class name, method name, arguments and the sentry params.
