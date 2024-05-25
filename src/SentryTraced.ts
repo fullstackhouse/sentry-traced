@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'reflect-metadata';
 import { SentryTracedParams, SentryTracedParamsIndexes } from './types';
 import {
@@ -17,7 +18,7 @@ const sentryParamsMetadataKey = Symbol('sentryParams');
  * @param options Decorator options related to sentry tracing namings
  * @returns Decorated function
  */
-export const SentryTraced = (options?: SentryTracedParams) => {
+export function SentryTraced(options?: SentryTracedParams) {
   return (
     target: object,
     propertyKey: string,
@@ -40,64 +41,53 @@ export const SentryTraced = (options?: SentryTracedParams) => {
           { className, methodName, args, sentryParams },
           options,
         );
-        const scope = sentryClient.getCurrentHub().getScope();
 
-        const inheritedSpan = scope.getSpan() || scope.getTransaction();
-        const parentSpan =
-          inheritedSpan ??
-          sentryClient.startTransaction({
-            ...spanContext,
-            name: spanContext.descriptionNoArguments,
-          });
-
-        const childSpan = parentSpan.startChild(spanContext);
-        sentryClient.configureScope((scope) => {
-          scope.setSpan(childSpan);
-        });
-
-        function finish(status: string) {
-          sentryClient.configureScope((scope) => {
-            if (scope.getSpan()?.spanId === childSpan.spanId) {
-              scope.setSpan(parentSpan);
+        return sentryClient.withIsolationScope((scope) => {
+          return sentryClient.startSpanManual(spanContext, (span, finish) => {
+            function onDone(status: string) {
+              span?.setStatus(status);
+              span?.end();
+              finish();
             }
+
+            return invoke(original, this, args, onDone);
           });
-
-          childSpan.setStatus(status);
-          childSpan.finish();
-
-          if (!inheritedSpan) {
-            parentSpan.setStatus(status);
-            parentSpan.finish();
-          }
-        }
-
-        try {
-          const result = original.call(this, ...args);
-
-          if (isGenerator(result)) {
-            return wrapIterable(result, finish);
-          }
-
-          if (result?.[Symbol.asyncIterator]) {
-            return wrapAsyncIterable(result, finish);
-          }
-
-          if (isPromise(result)) {
-            return wrapPromise(result, finish);
-          }
-
-          finish('ok');
-          return result;
-        } catch (error) {
-          finish('error');
-          throw error;
-        }
+        });
       };
 
       return intermediaryFunction();
     };
   };
-};
+}
+
+function invoke<T>(
+  fn: (...args: any) => T,
+  thisObj: any,
+  args: any,
+  onDone: (status: string) => void,
+): T {
+  try {
+    const result = fn.call(thisObj, ...args) as any;
+
+    if (isGenerator(result)) {
+      return wrapIterable(result, onDone) as any;
+    }
+
+    if (result?.[Symbol.asyncIterator]) {
+      return wrapAsyncIterable(result, onDone) as any;
+    }
+
+    if (isPromise(result)) {
+      return wrapPromise(result, onDone) as any;
+    }
+
+    onDone('ok');
+    return result;
+  } catch (error) {
+    onDone('error');
+    throw error;
+  }
+}
 
 /**
  * Decorator that marks a parameter as something to be included in the transaction name

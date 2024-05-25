@@ -63,18 +63,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getValue()',
         }),
-        finished: true,
+        ended: true,
         status: 'ok',
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getValue()',
-            }),
-            finished: true,
-            status: 'ok',
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
   });
@@ -89,18 +80,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getError()',
         }),
-        finished: true,
+        ended: true,
         status: 'error',
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getError()',
-            }),
-            finished: true,
-            status: 'error',
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
   });
@@ -115,18 +97,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getPromise()',
         }),
-        finished: true,
+        ended: true,
         status: 'ok',
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getPromise()',
-            }),
-            finished: true,
-            status: 'ok',
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
   });
@@ -143,18 +116,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getErrorPromise()',
         }),
-        finished: true,
+        ended: true,
         status: 'error',
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getErrorPromise()',
-            }),
-            finished: true,
-            status: 'error',
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
   });
@@ -169,18 +133,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getIterable()',
         }),
-        finished: false,
+        ended: false,
         status: null,
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getIterable()',
-            }),
-            finished: false,
-            status: null,
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
 
@@ -191,18 +146,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getIterable()',
         }),
-        finished: true,
+        ended: true,
         status: 'ok',
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getIterable()',
-            }),
-            finished: true,
-            status: 'ok',
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
   });
@@ -217,18 +163,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getErrorIterable()',
         }),
-        finished: false,
+        ended: false,
         status: null,
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getErrorIterable()',
-            }),
-            finished: false,
-            status: null,
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
 
@@ -239,18 +176,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getErrorIterable()',
         }),
-        finished: true,
+        ended: true,
         status: 'error',
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getErrorIterable()',
-            }),
-            finished: true,
-            status: 'error',
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
   });
@@ -265,18 +193,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getAsyncIterable()',
         }),
-        finished: false,
+        ended: false,
         status: null,
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getAsyncIterable()',
-            }),
-            finished: false,
-            status: null,
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
 
@@ -287,18 +206,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getAsyncIterable()',
         }),
-        finished: true,
+        ended: true,
         status: 'ok',
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getAsyncIterable()',
-            }),
-            finished: true,
-            status: 'ok',
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
   });
@@ -313,18 +223,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getErrorAsyncIterable()',
         }),
-        finished: false,
+        ended: false,
         status: null,
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getErrorAsyncIterable()',
-            }),
-            finished: false,
-            status: null,
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
 
@@ -337,18 +238,9 @@ describe('SentryTraced', () => {
         context: expect.objectContaining({
           op: 'Foo.getErrorAsyncIterable()',
         }),
-        finished: true,
+        ended: true,
         status: 'error',
-        children: [
-          expect.objectContaining({
-            context: expect.objectContaining({
-              op: 'Foo.getErrorAsyncIterable()',
-            }),
-            finished: true,
-            status: 'error',
-            children: [],
-          }),
-        ],
+        children: [],
       }),
     ]);
   });
@@ -366,10 +258,10 @@ function mockSentry() {
     context: unknown;
     children: SpanMock[];
     status: string | null;
-    finished: boolean;
+    ended: boolean;
     startChild: jest.Mock<SpanMock>;
     setStatus: jest.Mock<void, [status: string]>;
-    finish: jest.Mock<void, []>;
+    end: jest.Mock<void, []>;
   }
 
   function mockSpan(context: unknown): SpanMock {
@@ -377,7 +269,7 @@ function mockSentry() {
       context,
       children: [],
       status: null,
-      finished: false,
+      ended: false,
       startChild: jest.fn((context) => {
         const child = mockSpan(context);
         span.children.push(child);
@@ -386,39 +278,35 @@ function mockSentry() {
       setStatus: jest.fn((status: string) => {
         span.status = status;
       }),
-      finish: jest.fn(() => {
-        span.finished = true;
+      end: jest.fn(() => {
+        span.ended = true;
       }),
     };
     return span;
   }
 
   function mockScope() {
-    let currentTransaction: any;
     let currentSpan: any;
-
     return {
       getSpan: jest.fn(() => currentSpan),
       setSpan: jest.fn((span) => {
         currentSpan = span;
       }),
-
-      getTransaction: jest.fn(() => currentTransaction),
     };
   }
 
   const client = {
     transactions: [] as SpanMock[],
-    configureScope(fn: any) {
-      fn(scope);
+    withIsolationScope(fn: any) {
+      return fn(scope);
     },
     getCurrentHub() {
       return hub;
     },
-    startTransaction: jest.fn((context) => {
-      const transaction = mockSpan(context);
-      client.transactions.push(transaction);
-      return transaction;
+    startSpanManual: jest.fn((context, fn) => {
+      const span = mockSpan(context);
+      client.transactions.push(span);
+      return fn(span, jest.fn());
     }),
   };
 

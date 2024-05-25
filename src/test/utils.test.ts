@@ -20,8 +20,7 @@ describe('utils', () => {
         }),
       ).toEqual({
         op: 'testMethod()',
-        description: 'testMethod() call',
-        descriptionNoArguments: 'testMethod() call',
+        name: 'testMethod() call',
         data: { args: undefined },
       });
     });
@@ -32,8 +31,7 @@ describe('utils', () => {
         }),
       ).toEqual({
         op: 'testClass()',
-        description: 'testClass() call',
-        descriptionNoArguments: 'testClass() call',
+        name: 'testClass() call',
         data: { args: undefined },
       });
     });
@@ -45,8 +43,7 @@ describe('utils', () => {
         }),
       ).toEqual({
         op: 'testClass.testMethod()',
-        description: 'testClass.testMethod() call',
-        descriptionNoArguments: 'testClass.testMethod() call',
+        name: 'testClass.testMethod() call',
         data: { args: undefined },
       });
     });
@@ -59,8 +56,7 @@ describe('utils', () => {
         }),
       ).toEqual({
         op: 'testClass.testMethod(_,_,_)',
-        description: 'testClass.testMethod(_,_,_) call',
-        descriptionNoArguments: 'testClass.testMethod() call',
+        name: 'testClass.testMethod(_,_,_) call',
         data: { args: [1, 'two', true] },
       });
     });
@@ -74,8 +70,7 @@ describe('utils', () => {
         }),
       ).toEqual({
         op: 'testClass.testMethod(1,_,true)',
-        description: 'testClass.testMethod(1,_,true) call',
-        descriptionNoArguments: 'testClass.testMethod() call',
+        name: 'testClass.testMethod(1,_,true) call',
         data: { args: [1, 'two', true] },
       });
     });

@@ -1,11 +1,10 @@
 import * as Sentry from '@sentry/node';
-import { extractTraceparentData } from '@sentry/tracing';
 import { SpanContext } from '@sentry/types';
 import { InternalMetadata, SentryTracedParams } from './types';
 
 declare global {
   // eslint-disable-next-line no-var
-  var sentryTracedInstance: any;
+  var sentryTracedInstance: typeof Sentry;
 }
 
 export const registerSentryInstance = (sentryInstance: typeof Sentry) => {
@@ -21,15 +20,16 @@ export const getSentryInstance = (): typeof Sentry => {
  * @param value Value to check if it's a promise
  * @returns Returns true if the value is a promise
  */
-export const isPromise = (value: any): boolean => {
+export const isPromise = (value: unknown): value is Promise<unknown> => {
   return (
     value !== null &&
     typeof value === 'object' &&
+    'then' in value &&
     typeof value.then === 'function'
   );
 };
 
-export function isGenerator(value: any): boolean {
+export function isGenerator(value: unknown): value is Iterable<unknown> {
   return /\[object Generator|GeneratorFunction\]/.test(
     Object.prototype.toString.call(value),
   );
@@ -66,11 +66,11 @@ export async function wrapPromise<T>(
   onDone: (status: string) => void,
 ): Promise<T> {
   return promise
-    .then((value: any) => {
+    .then((value) => {
       onDone('ok');
       return value;
     })
-    .catch((error: any) => {
+    .catch((error: unknown) => {
       onDone('error');
       throw error;
     });
@@ -115,15 +115,12 @@ export const generateSpanContext = (
   }
 
   const op = options?.op || `${functionNameString}${argumentsStringList}`;
-  const description =
+  const name =
     options?.description || `${functionNameString}${argumentsStringList} call`;
-  const descriptionNoArguments =
-    options?.description || `${functionNameString}() call`;
 
   return {
     op,
-    description,
-    descriptionNoArguments,
+    name,
     data: { args },
   };
 };
@@ -147,18 +144,18 @@ export const withTracing =
       return await functionToCall.bind(functionToCall)(...args);
     }
     // The request headers sent by your upstream service to your backend.
-    const extractedTraceparentData = extractTraceparentData(traceparentData);
+    const extractedTraceparentData =
+      Sentry.extractTraceparentData(traceparentData);
     const className = functionToCall.constructor.name;
     const methodName = functionToCall.name;
-    const { op, description } = generateSpanContext({
+    const { op, name } = generateSpanContext({
       className,
       methodName,
       args,
     });
     const transaction = Sentry.startTransaction({
       op,
-      description,
-      name: `${op} transaction`,
+      name,
       ...extractedTraceparentData,
       ...overrides,
     });
