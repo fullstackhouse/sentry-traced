@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/node';
 import { SpanContext } from '@sentry/types';
 import { InternalMetadata, SentryTracedParams } from './types';
 declare global {
-    var sentryTracedInstance: any;
+    var sentryTracedInstance: typeof Sentry;
 }
 export declare const registerSentryInstance: (sentryInstance: typeof Sentry) => void;
 export declare const getSentryInstance: () => typeof Sentry;
@@ -11,8 +11,8 @@ export declare const getSentryInstance: () => typeof Sentry;
  * @param value Value to check if it's a promise
  * @returns Returns true if the value is a promise
  */
-export declare const isPromise: (value: any) => boolean;
-export declare function isGenerator(value: any): boolean;
+export declare const isPromise: (value: unknown) => value is Promise<unknown>;
+export declare function isGenerator(value: unknown): value is Iterable<unknown>;
 export declare function wrapIterable<T>(iterable: Iterable<T>, onDone: (status: string) => void): Iterable<T>;
 export declare function wrapAsyncIterable<T>(iterable: AsyncIterable<T>, onDone: (status: string) => void): AsyncIterable<T>;
 export declare function wrapPromise<T>(promise: Promise<T>, onDone: (status: string) => void): Promise<T>;
@@ -25,8 +25,7 @@ export declare function fromAsync<T>(iterable: AsyncIterable<T>): Promise<T[]>;
  */
 export declare const generateSpanContext: (metadata: InternalMetadata, options?: SentryTracedParams) => {
     op: string;
-    description: string;
-    descriptionNoArguments: string;
+    name: string;
     data: {
         args: unknown[] | undefined;
     };

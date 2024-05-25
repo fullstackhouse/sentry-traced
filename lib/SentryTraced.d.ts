@@ -5,7 +5,7 @@ import { SentryTracedParams } from './types';
  * @param options Decorator options related to sentry tracing namings
  * @returns Decorated function
  */
-export declare const SentryTraced: (options?: SentryTracedParams) => (target: object, propertyKey: string, descriptor: PropertyDescriptor) => void;
+export declare function SentryTraced(options?: SentryTracedParams): (target: object, propertyKey: string, descriptor: PropertyDescriptor) => void;
 /**
  * Decorator that marks a parameter as something to be included in the transaction name
  * @example
