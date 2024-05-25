@@ -38,45 +38,40 @@ export const SentryTraced = (options?: SentryTracedParams) => {
         // - the current transaction if it exists, this can only happen if the function call is a child of the root node
         const contextTransaction = scope?.getSpan() || scope?.getTransaction();
         // we try to get the context span or transaction and if it doesn't exist we create a new transaction
-        const transactionOrSpan =
+        const parentSpan =
           contextTransaction ||
           sentryClient.startTransaction({
             ...spanContext,
             name: spanContext.descriptionNoArguments,
           });
-        // start a nested child of the current transaction/span
-        const newSpan = transactionOrSpan?.startChild(spanContext);
-        // set the context of the newly create span/transaction
+
+        const childSpan = parentSpan?.startChild(spanContext);
         sentryClient.configureScope((scope) => {
-          scope.setSpan(newSpan);
+          scope.setSpan(childSpan);
         });
-        // call the function -> if the function is also annotated it will basically "recursively" create spans inside the parent span based on the context that we set
-        const resultPromise = original.call(this, ...args);
-        // there's a possibility that the function is a normal function or an async one so we need to check for both cases
-        if (isPromise(resultPromise)) {
-          // in case the function is a promise we need to resolve it and also reset the current context to the parent node for the next sibling function call
-          return resultPromise.then((e: any) => {
-            sentryClient.configureScope((scope) => {
-              scope.setSpan(transactionOrSpan);
-            });
-            newSpan?.finish();
-            if (!contextTransaction) {
-              transactionOrSpan.finish();
-            }
+
+        const result = original.call(this, ...args);
+
+        function finishSpan() {
+          sentryClient.configureScope((scope) => {
+            scope.setSpan(parentSpan);
+          });
+          childSpan?.finish();
+          if (!contextTransaction) {
+            parentSpan.finish();
+          }
+        }
+
+        if (isPromise(result)) {
+          return result.then((e: any) => {
+            finishSpan();
             return e;
           });
-        } else {
-          // same for a normal function but we just do it before returning the value
-          sentryClient.configureScope((scope) => {
-            scope.setSpan(transactionOrSpan);
-          });
-          newSpan?.finish();
-          if (!contextTransaction) {
-            transactionOrSpan.finish();
-          }
-
-          return resultPromise;
         }
+
+        finishSpan();
+
+        return result;
       };
       return intermediaryFunction();
     };
