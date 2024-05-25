@@ -300,9 +300,6 @@ function mockSentry() {
     withIsolationScope(fn: any) {
       return fn(scope);
     },
-    getCurrentHub() {
-      return hub;
-    },
     startSpanManual: jest.fn((context, fn) => {
       const span = mockSpan(context);
       client.transactions.push(span);

@@ -34,15 +34,16 @@ export function SentryTraced(options?: SentryTracedParams) {
         [];
 
       const intermediaryFunction = () => {
-        if (!sentryClient || !sentryClient.getCurrentHub()) {
-          throw new Error(`Sentry client not set`);
+        if (!sentryClient) {
+          return original.call(this, ...args);
         }
+
         const spanContext = generateSpanContext(
           { className, methodName, args, sentryParams },
           options,
         );
 
-        return sentryClient.withIsolationScope((scope) => {
+        return sentryClient.withIsolationScope(() => {
           return sentryClient.startSpanManual(spanContext, (span, finish) => {
             function onDone(status: string) {
               span?.setStatus(status);

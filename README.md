@@ -23,10 +23,13 @@ npm install sentry-traced
 
 ## Usage
 
-To use the Sentry decorator, you must first import it into your project. You can do this by including the following line of code at the top of your file:
+To use the Sentry decorator, you must first import it into your project and register Sentry instance. You can do this by including the following lines of code:
 
 ```ts
-import { SentryTraced } from 'sentry-traced';
+import { registerSentryInstance } from 'sentry-traced';
+import * as Sentry from '@sentry/node';
+
+registerSentryInstance(Sentry);
 ```
 
 Next, you can use the `@SentryTraced` decorator to annotate class methods that you want to generate Sentry tracing information for.
