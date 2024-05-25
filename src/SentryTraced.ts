@@ -1,4 +1,3 @@
-import Sentry from '@sentry/node';
 import 'reflect-metadata';
 import { SentryTracedParams, SentryTracedParamsIndexes } from './types';
 import { generateSpanContext, getSentryInstance, isPromise } from './utils';
@@ -68,7 +67,7 @@ export const SentryTraced = (options?: SentryTracedParams) => {
           });
         } else {
           // same for a normal function but we just do it before returning the value
-          Sentry.configureScope((scope) => {
+          sentryClient.configureScope((scope) => {
             scope.setSpan(transactionOrSpan);
           });
           newSpan?.finish();
