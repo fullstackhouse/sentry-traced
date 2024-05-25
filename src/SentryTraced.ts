@@ -51,8 +51,17 @@ export const SentryTraced = (options?: SentryTracedParams) => {
           });
 
         const childSpan = parentSpan.startChild(spanContext);
+        sentryClient.configureScope((scope) => {
+          scope.setSpan(childSpan);
+        });
 
         function finish(status: string) {
+          sentryClient.configureScope((scope) => {
+            if (scope.getSpan()?.spanId === childSpan.spanId) {
+              scope.setSpan(parentSpan);
+            }
+          });
+
           childSpan.setStatus(status);
           childSpan.finish();
 
