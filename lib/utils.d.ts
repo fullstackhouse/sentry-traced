@@ -12,6 +12,11 @@ export declare const getSentryInstance: () => typeof Sentry;
  * @returns Returns true if the value is a promise
  */
 export declare const isPromise: (value: any) => boolean;
+export declare function isGenerator(value: any): boolean;
+export declare function wrapIterable<T>(iterable: Iterable<T>, onDone: (status: string) => void): Iterable<T>;
+export declare function wrapAsyncIterable<T>(iterable: AsyncIterable<T>, onDone: (status: string) => void): AsyncIterable<T>;
+export declare function wrapPromise<T>(promise: Promise<T>, onDone: (status: string) => void): Promise<T>;
+export declare function fromAsync<T>(iterable: AsyncIterable<T>): Promise<T[]>;
 /**
  * The data the Sentry needs to generate a span context
  * @param metadata Internal metadata used to generate the span context. It contains the class name, method name, arguments and the sentry params.
