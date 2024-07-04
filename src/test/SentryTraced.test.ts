@@ -64,7 +64,7 @@ describe('SentryTraced', () => {
           op: 'Foo.getValue()',
         }),
         ended: true,
-        status: 'ok',
+        status: { code: 1 },
         children: [],
       }),
     ]);
@@ -81,7 +81,7 @@ describe('SentryTraced', () => {
           op: 'Foo.getError()',
         }),
         ended: true,
-        status: 'error',
+        status: { code: 2, message: 'test error' },
         children: [],
       }),
     ]);
@@ -98,7 +98,7 @@ describe('SentryTraced', () => {
           op: 'Foo.getPromise()',
         }),
         ended: true,
-        status: 'ok',
+        status: { code: 1 },
         children: [],
       }),
     ]);
@@ -117,7 +117,7 @@ describe('SentryTraced', () => {
           op: 'Foo.getErrorPromise()',
         }),
         ended: true,
-        status: 'error',
+        status: { code: 2, message: 'test error' },
         children: [],
       }),
     ]);
@@ -147,7 +147,7 @@ describe('SentryTraced', () => {
           op: 'Foo.getIterable()',
         }),
         ended: true,
-        status: 'ok',
+        status: { code: 1 },
         children: [],
       }),
     ]);
@@ -177,7 +177,7 @@ describe('SentryTraced', () => {
           op: 'Foo.getErrorIterable()',
         }),
         ended: true,
-        status: 'error',
+        status: { code: 2, message: 'test error' },
         children: [],
       }),
     ]);
@@ -207,7 +207,7 @@ describe('SentryTraced', () => {
           op: 'Foo.getAsyncIterable()',
         }),
         ended: true,
-        status: 'ok',
+        status: { code: 1 },
         children: [],
       }),
     ]);
@@ -239,7 +239,7 @@ describe('SentryTraced', () => {
           op: 'Foo.getErrorAsyncIterable()',
         }),
         ended: true,
-        status: 'error',
+        status: { code: 2, message: 'test error' },
         children: [],
       }),
     ]);
@@ -248,19 +248,14 @@ describe('SentryTraced', () => {
 
 function mockSentry() {
   const scope = mockScope();
-  const hub = {
-    getScope() {
-      return scope;
-    },
-  };
 
   interface SpanMock {
     context: unknown;
     children: SpanMock[];
-    status: string | null;
+    status: unknown | null;
     ended: boolean;
     startChild: jest.Mock<SpanMock>;
-    setStatus: jest.Mock<void, [status: string]>;
+    setStatus: jest.Mock<void, [status: unknown]>;
     end: jest.Mock<void, []>;
   }
 
@@ -275,7 +270,7 @@ function mockSentry() {
         span.children.push(child);
         return child;
       }),
-      setStatus: jest.fn((status: string) => {
+      setStatus: jest.fn((status: unknown) => {
         span.status = status;
       }),
       end: jest.fn(() => {

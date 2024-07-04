@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/node';
-import { SpanContext } from '@sentry/types';
 import { InternalMetadata, SentryTracedParams } from './types';
 declare global {
     var sentryTracedInstance: typeof Sentry;
@@ -13,9 +12,9 @@ export declare const getSentryInstance: () => typeof Sentry;
  */
 export declare const isPromise: (value: unknown) => value is Promise<unknown>;
 export declare function isGenerator(value: unknown): value is Iterable<unknown>;
-export declare function wrapIterable<T>(iterable: Iterable<T>, onDone: (status: string) => void): Iterable<T>;
-export declare function wrapAsyncIterable<T>(iterable: AsyncIterable<T>, onDone: (status: string) => void): AsyncIterable<T>;
-export declare function wrapPromise<T>(promise: Promise<T>, onDone: (status: string) => void): Promise<T>;
+export declare function wrapIterable<T>(iterable: Iterable<T>, onDone: (error?: unknown) => void): Iterable<T>;
+export declare function wrapAsyncIterable<T>(iterable: AsyncIterable<T>, onDone: (error?: unknown) => void): AsyncIterable<T>;
+export declare function wrapPromise<T>(promise: Promise<T>, onDone: (error?: unknown) => void): Promise<T>;
 export declare function fromAsync<T>(iterable: AsyncIterable<T>): Promise<T[]>;
 /**
  * The data the Sentry needs to generate a span context
@@ -30,6 +29,7 @@ export declare const generateSpanContext: (metadata: InternalMetadata, options?:
         args: unknown[] | undefined;
     };
 };
+export type StartSpanOptions = Parameters<typeof Sentry.startSpan>[0];
 /**
  * This function is used to connect a method annotated with `@SentryTraced` to an existing transaction based on the traceparentData string
  * See https://docs.sentry.io/platforms/node/performance/connect-services/
@@ -41,4 +41,4 @@ export declare const generateSpanContext: (metadata: InternalMetadata, options?:
  * const result = withTracing(sentryTrace)(secondService.myMethod)('some param1', 'some param2');
  * ```
  */
-export declare const withTracing: (traceparentData?: string, overrides?: SpanContext) => <T extends (...args: never[]) => any>(functionToCall: T) => (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>>;
+export declare const withTracing: (traceparentData?: string, overrides?: Partial<StartSpanOptions>) => <T extends (...args: never[]) => any>(functionToCall: T) => (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>>;

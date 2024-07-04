@@ -7,6 +7,7 @@ export type SentryTracedParams = {
   description?: string;
   op?: string;
 };
+
 export type InternalMetadata = {
   /**
    * The name of the method

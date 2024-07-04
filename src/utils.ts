@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node';
-import { SpanContext } from '@sentry/types';
 import { InternalMetadata, SentryTracedParams } from './types';
+import { extractTraceparentData } from '@sentry/utils';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -37,41 +37,41 @@ export function isGenerator(value: unknown): value is Iterable<unknown> {
 
 export function* wrapIterable<T>(
   iterable: Iterable<T>,
-  onDone: (status: string) => void,
+  onDone: (error?: unknown) => void,
 ): Iterable<T> {
   try {
     yield* iterable;
-    onDone('ok');
+    onDone();
   } catch (error) {
-    onDone('error');
+    onDone(error);
     throw error;
   }
 }
 
 export async function* wrapAsyncIterable<T>(
   iterable: AsyncIterable<T>,
-  onDone: (status: string) => void,
+  onDone: (error?: unknown) => void,
 ): AsyncIterable<T> {
   try {
     yield* iterable;
-    onDone('ok');
+    onDone();
   } catch (error) {
-    onDone('error');
+    onDone(error);
     throw error;
   }
 }
 
 export async function wrapPromise<T>(
   promise: Promise<T>,
-  onDone: (status: string) => void,
+  onDone: (error?: unknown) => void,
 ): Promise<T> {
   return promise
     .then((value) => {
-      onDone('ok');
+      onDone();
       return value;
     })
     .catch((error: unknown) => {
-      onDone('error');
+      onDone(error);
       throw error;
     });
 }
@@ -125,6 +125,8 @@ export const generateSpanContext = (
   };
 };
 
+export type StartSpanOptions = Parameters<typeof Sentry.startSpan>[0];
+
 /**
  * This function is used to connect a method annotated with `@SentryTraced` to an existing transaction based on the traceparentData string
  * See https://docs.sentry.io/platforms/node/performance/connect-services/
@@ -137,15 +139,14 @@ export const generateSpanContext = (
  * ```
  */
 export const withTracing =
-  (traceparentData?: string, overrides: SpanContext = {}) =>
+  (traceparentData?: string, overrides: Partial<StartSpanOptions> = {}) =>
   <T extends (...args: never[]) => any>(functionToCall: T) =>
   async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
     if (!traceparentData) {
       return await functionToCall.bind(functionToCall)(...args);
     }
     // The request headers sent by your upstream service to your backend.
-    const extractedTraceparentData =
-      Sentry.extractTraceparentData(traceparentData);
+    const extractedTraceparentData = extractTraceparentData(traceparentData);
     const className = functionToCall.constructor.name;
     const methodName = functionToCall.name;
     const { op, name } = generateSpanContext({
@@ -153,16 +154,15 @@ export const withTracing =
       methodName,
       args,
     });
-    const transaction = Sentry.startTransaction({
-      op,
-      name,
-      ...extractedTraceparentData,
-      ...overrides,
-    });
-    Sentry.configureScope((scope) => {
-      scope.setSpan(transaction);
-    });
-    const result = await functionToCall.bind(functionToCall)(...args);
-    transaction.finish();
-    return result;
+    return Sentry.startSpan(
+      {
+        op,
+        name,
+        ...extractedTraceparentData,
+        ...overrides,
+      },
+      () => {
+        return functionToCall.bind(functionToCall)(...args);
+      },
+    );
   };

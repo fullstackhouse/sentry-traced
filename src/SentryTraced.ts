@@ -13,6 +13,9 @@ import {
 
 const sentryParamsMetadataKey = Symbol('sentryParams');
 
+const SPAN_STATUS_OK = 1;
+const SPAN_STATUS_ERROR = 2;
+
 /**
  * Decorator that automatically generates calls the sentry tracing related functions and registers nested aware metrics
  * @param options Decorator options related to sentry tracing namings
@@ -45,8 +48,21 @@ export function SentryTraced(options?: SentryTracedParams) {
 
         return sentryClient.withIsolationScope(() => {
           return sentryClient.startSpanManual(spanContext, (span, finish) => {
-            function onDone(status: string) {
-              span?.setStatus(status);
+            function onDone(error?: unknown) {
+              span?.setStatus(
+                error
+                  ? {
+                      code: SPAN_STATUS_ERROR,
+                      message:
+                        error &&
+                        typeof error === 'object' &&
+                        'message' in error &&
+                        typeof error.message === 'string'
+                          ? error.message
+                          : undefined,
+                    }
+                  : { code: SPAN_STATUS_OK },
+              );
               span?.end();
               finish();
             }
@@ -65,7 +81,7 @@ function invoke<T>(
   fn: (...args: any) => T,
   thisObj: any,
   args: any,
-  onDone: (status: string) => void,
+  onDone: (error?: unknown) => void,
 ): T {
   try {
     const result = fn.call(thisObj, ...args) as any;
@@ -82,10 +98,10 @@ function invoke<T>(
       return wrapPromise(result, onDone) as any;
     }
 
-    onDone('ok');
+    onDone();
     return result;
   } catch (error) {
-    onDone('error');
+    onDone(error);
     throw error;
   }
 }
