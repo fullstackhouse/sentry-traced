@@ -29,50 +29,45 @@ export function SentryTraced(options?: SentryTracedParams) {
   ) => {
     const original = descriptor.value;
     descriptor.value = function (...args: unknown[]) {
+      const sentryClient = getSentryInstance();
+      if (!sentryClient) {
+        return original.call(this, ...args);
+      }
+
       const className = this.constructor.name;
       const methodName = propertyKey;
-      const sentryClient = getSentryInstance();
       const sentryParams: SentryTracedParamsIndexes =
         Reflect.getOwnMetadata(sentryParamsMetadataKey, target, methodName) ||
         [];
 
-      const intermediaryFunction = () => {
-        if (!sentryClient) {
-          return original.call(this, ...args);
-        }
+      const spanContext = generateSpanContext(
+        { className, methodName, args, sentryParams },
+        options,
+      );
 
-        const spanContext = generateSpanContext(
-          { className, methodName, args, sentryParams },
-          options,
-        );
+      return sentryClient.withIsolationScope(() => {
+        return sentryClient.startSpanManual(spanContext, (span) => {
+          function onDone(error?: unknown) {
+            span.setStatus(
+              error
+                ? {
+                    code: SPAN_STATUS_ERROR,
+                    message:
+                      error &&
+                      typeof error === 'object' &&
+                      'message' in error &&
+                      typeof error.message === 'string'
+                        ? error.message
+                        : undefined,
+                  }
+                : { code: SPAN_STATUS_OK },
+            );
+            span.end();
+          }
 
-        return sentryClient.withIsolationScope(() => {
-          return sentryClient.startSpanManual(spanContext, (span, finish) => {
-            function onDone(error?: unknown) {
-              span?.setStatus(
-                error
-                  ? {
-                      code: SPAN_STATUS_ERROR,
-                      message:
-                        error &&
-                        typeof error === 'object' &&
-                        'message' in error &&
-                        typeof error.message === 'string'
-                          ? error.message
-                          : undefined,
-                    }
-                  : { code: SPAN_STATUS_OK },
-              );
-              span?.end();
-              finish();
-            }
-
-            return invoke(original, this, args, onDone);
-          });
+          return invoke(original, this, args, onDone);
         });
-      };
-
-      return intermediaryFunction();
+      });
     };
   };
 }
@@ -87,15 +82,15 @@ function invoke<T>(
     const result = fn.call(thisObj, ...args) as any;
 
     if (isGenerator(result)) {
-      return wrapIterable(result, onDone) as any;
+      return wrapIterable(result, onDone) as T;
     }
 
     if (result?.[Symbol.asyncIterator]) {
-      return wrapAsyncIterable(result, onDone) as any;
+      return wrapAsyncIterable(result, onDone) as T;
     }
 
     if (isPromise(result)) {
-      return wrapPromise(result, onDone) as any;
+      return wrapPromise(result, onDone) as T;
     }
 
     onDone();

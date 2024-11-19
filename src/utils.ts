@@ -20,14 +20,14 @@ export const getSentryInstance = (): typeof Sentry => {
  * @param value Value to check if it's a promise
  * @returns Returns true if the value is a promise
  */
-export const isPromise = (value: unknown): value is Promise<unknown> => {
+export function isPromise(value: unknown): value is Promise<unknown> {
   return (
     value !== null &&
     typeof value === 'object' &&
     'then' in value &&
     typeof value.then === 'function'
   );
-};
+}
 
 export function isGenerator(value: unknown): value is Iterable<unknown> {
   return /\[object Generator|GeneratorFunction\]/.test(

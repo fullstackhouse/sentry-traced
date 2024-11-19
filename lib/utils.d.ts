@@ -10,7 +10,7 @@ export declare const getSentryInstance: () => typeof Sentry;
  * @param value Value to check if it's a promise
  * @returns Returns true if the value is a promise
  */
-export declare const isPromise: (value: unknown) => value is Promise<unknown>;
+export declare function isPromise(value: unknown): value is Promise<unknown>;
 export declare function isGenerator(value: unknown): value is Iterable<unknown>;
 export declare function wrapIterable<T>(iterable: Iterable<T>, onDone: (error?: unknown) => void): Iterable<T>;
 export declare function wrapAsyncIterable<T>(iterable: AsyncIterable<T>, onDone: (error?: unknown) => void): AsyncIterable<T>;
