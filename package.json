@@ -58,8 +58,8 @@
     "test": "npm run build && jest"
   },
   "dependencies": {
-    "@sentry/core": "^9.5.0",
-    "@sentry/node": "^9.5.0",
+    "@sentry/core": "^9.18.0",
+    "@sentry/node": "^9.18.0",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
