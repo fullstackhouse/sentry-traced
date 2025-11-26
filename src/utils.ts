@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { InternalMetadata, SentryTracedParams } from './types';
-import { extractTraceparentData } from '@sentry/utils';
+import { extractTraceparentData } from '@sentry/core';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -98,7 +98,7 @@ export const generateSpanContext = (
   // this generates a string as a list of arguments, for example (1,2,3) or (1,_,3)
   let argumentsStringList = '()';
   if (args) {
-    argumentsStringList = `(${new Array(args.length)
+    argumentsStringList = `(${Array.from({ length: args.length })
       .fill(0)
       .map((_, index) =>
         (sentryParams || []).includes(index) ? args[index] : '_',
@@ -140,6 +140,7 @@ export type StartSpanOptions = Parameters<typeof Sentry.startSpan>[0];
  */
 export const withTracing =
   (traceparentData?: string, overrides: Partial<StartSpanOptions> = {}) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   <T extends (...args: never[]) => any>(functionToCall: T) =>
   async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
     if (!traceparentData) {
