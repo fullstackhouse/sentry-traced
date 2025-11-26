@@ -51,7 +51,7 @@
     "format": "sort-package-json && prettier --write '**/*.{ts,js,json,yml,md}' && eslint --fix .",
     "lint": "eslint . && ec .",
     "lint:fix": "eslint . --fix && ec .",
-    "prepare": "husky install || true",
+    "prepare": "npm run build && husky install || true",
     "release:major": "npm version major --no-commit-hooks && git push --follow-tags",
     "release:minor": "npm version minor --no-commit-hooks && git push --follow-tags",
     "release:patch": "npm version patch --no-commit-hooks && git push --follow-tags",
