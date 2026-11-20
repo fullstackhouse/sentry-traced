@@ -6,12 +6,13 @@ on:
     types:
       - completed
 
+permissions: {}
+
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
-      packages: write
       contents: read
     steps:
       - uses: actions/checkout@v3
