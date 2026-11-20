@@ -5,8 +5,12 @@ on:
     branches:
       - 'main'
 
+permissions: {}
+
 jobs:
   install-and-test:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,6 +21,8 @@ jobs:
       - run: npm ci
       - run: npm test
   tag-and-bump:
+    permissions:
+      contents: write
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
     needs: install-and-test
     runs-on: ubuntu-latest
